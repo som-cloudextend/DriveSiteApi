@@ -1,4 +1,5 @@
 using Celigo.Outlook.Commons;
+using Celigo.Outlook.Commons.Models;
 using Codoxide;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Graph;
@@ -29,6 +30,7 @@ public class DriveController: ControllerBase
     [HttpPost("create-folder")]
     public async Task<IActionResult> CreateFolderInDrive([FromBody] Requests folderData)
     {
+        var fileContentInBytes = System.IO.File.ReadAllBytes("/Users/somenathmaji/Downloads/customscript2350.xml");
         var folderItemId = "";
         await _graphGraphClientProvider.GetGraphClient(tenantId)
             .Map(async graphClient =>
@@ -36,23 +38,17 @@ public class DriveController: ControllerBase
                 var siteRoot = await graphClient.Sites[folderData.SiteRelativePath].GetAsync();
                 var defaultDrive = await graphClient.Sites[siteRoot?.Id].Drive.GetAsync();
                 var parentFolderItem = await graphClient.Drives[defaultDrive?.Id].Root.GetAsync();
-                
-                var folderNames = folderData.FolderAbsolutePath.Trim('/').Split('/');
-                foreach (var folderName in folderNames)
+                var folderId = string.IsNullOrEmpty(folderData.Id) ? parentFolderItem?.Id : folderData.Id;
+                var newFolderItem = new DriveItem
                 {
-                    var newFolderItem = new DriveItem
+                    Name = folderData.Name,
+                    Folder = new Folder(),
+                    AdditionalData = new Dictionary<string, object>
                     {
-                        Name = folderName,
-                        Folder = new Folder(),
-                        AdditionalData = new Dictionary<string, object>
-                        {
-                            { "@microsoft.graph.conflictBehavior", "replace" }
-                        }
-                    };
-
-                    parentFolderItem = await graphClient.Drives[defaultDrive?.Id].Items[parentFolderItem?.Id].Children.PostAsync(newFolderItem);
-                }
-                return parentFolderItem;
+                        { "@microsoft.graph.conflictBehavior", "replace" }
+                    }
+                };
+                return await graphClient.Drives[defaultDrive?.Id].Items[folderId].Children.PostAsync(newFolderItem);
             })
             .Map(driveItem =>
             {

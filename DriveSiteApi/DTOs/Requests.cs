@@ -4,7 +4,8 @@ public class Requests
 {
     public string UserEmail { get; set; }
     public string SiteRelativePath { get; set; }
-    public string FolderAbsolutePath { get; set; }
+    public string Id { get; set; }
+    public string Name { get; set; }
 }
 
 public class UploadFileRequest
